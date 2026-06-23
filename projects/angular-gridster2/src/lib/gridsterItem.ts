@@ -12,6 +12,7 @@ import {
   OnInit,
   output,
   Renderer2,
+  signal,
   Signal,
   untracked,
   ViewEncapsulation
@@ -108,10 +109,13 @@ export class GridsterItem implements OnInit, OnDestroy {
     this.gridster.markItemDirty(this);
   }
   init: boolean;
+  isMoving = signal(false);
+  isResizing = signal(false);
 
-  zIndex(): number {
-    return this.getLayerIndex() + this.gridster.$options().baseLayerIndex;
-  }
+  zIndex = computed(() => {
+    const base = this.getLayerIndex() + this.gridster.$options().baseLayerIndex;
+    return this.isMoving() || this.isResizing() ? base + 1 : base;
+  });
 
   constructor() {
     effect(() => {

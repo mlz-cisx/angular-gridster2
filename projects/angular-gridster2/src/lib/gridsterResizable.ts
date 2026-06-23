@@ -110,6 +110,7 @@ export class GridsterResizable {
 
     this.resizing.set(true);
     this.gridsterItem.renderer.addClass(this.gridsterItem.el, 'gridster-item-resizing');
+    this.gridsterItem.isResizing.set(true);
     this.lastMouse.clientX = e.clientX;
     this.lastMouse.clientY = e.clientY;
     this.left = this.gridsterItem.left;
@@ -262,6 +263,7 @@ export class GridsterResizable {
     }
     setTimeout(() => {
       this.gridsterItem.renderer.removeClass(this.gridsterItem.el, 'gridster-item-resizing');
+      this.gridsterItem.isResizing.set(false);
       if (this.gridster) {
         this.gridster.movingItem = null;
         this.gridster.previewStyle();
