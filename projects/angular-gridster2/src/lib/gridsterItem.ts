@@ -18,6 +18,7 @@ import {
 } from '@angular/core';
 
 import { Gridster } from './gridster';
+import { getCollisionIndex } from './gridsterCollisionIndex';
 import { GridsterDraggable } from './gridsterDraggable';
 import type { GridsterItemConfig, ResizableHandles } from './gridsterItemConfig';
 import { GridsterResizable } from './gridsterResizable';
@@ -34,7 +35,13 @@ import { GridsterUtils } from './gridsterUtils';
   }
 })
 export class GridsterItem implements OnInit, OnDestroy {
-  item = input.required<GridsterItemConfig>();
+  item = input.required<GridsterItemConfig, GridsterItemConfig>({
+    transform: item => {
+      // Collision queries may run before the computed rectangle/effect refreshes.
+      getCollisionIndex(this.gridster).update(this, item);
+      return item;
+    }
+  });
   itemInit = output<{
     item: GridsterItemConfig;
     itemComponent: GridsterItem;
@@ -55,7 +62,7 @@ export class GridsterItem implements OnInit, OnDestroy {
   private readonly zone = inject(NgZone);
 
   $item: Signal<GridsterItemConfig> = computed<GridsterItemConfig>(() => {
-    return GridsterUtils.merge({}, this.item(), {
+    const item = GridsterUtils.merge({}, this.item(), {
       cols: undefined,
       rows: undefined,
       x: undefined,
@@ -82,6 +89,7 @@ export class GridsterItem implements OnInit, OnDestroy {
         nw: undefined
       }
     });
+    return getCollisionIndex(this.gridster).track(this, item);
   });
   top: number;
   left: number;

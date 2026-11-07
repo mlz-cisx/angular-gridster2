@@ -17,6 +17,7 @@ import {
 } from '@angular/core';
 import { debounceTime, Subject, switchMap, takeUntil, timer } from 'rxjs';
 
+import { getCollisionIndex } from './gridsterCollisionIndex';
 import { GridsterCompact } from './gridsterCompact';
 import type { GridsterApi, GridsterConfig, GridsterConfigStrict } from './gridsterConfig';
 import { GridType } from './gridsterConfig';
@@ -386,10 +387,12 @@ export class Gridster implements OnInit, OnDestroy {
       }
     }
     this.grid.push(itemComponent);
+    getCollisionIndex(this).add(itemComponent);
     this.calculateLayout$.next();
   }
 
   removeItem(itemComponent: GridsterItem): void {
+    getCollisionIndex(this).remove(itemComponent);
     this.grid.splice(this.grid.indexOf(itemComponent), 1);
     this.calculateLayout$.next();
 
@@ -450,8 +453,7 @@ export class Gridster implements OnInit, OnDestroy {
   }
 
   findItemWithItem(item: GridsterItemConfig): GridsterItem | boolean {
-    for (let i = 0; i < this.grid.length; i++) {
-      const widget = this.grid[i];
+    for (const widget of getCollisionIndex(this).candidates(item)) {
       if (widget.$item() !== item && this.checkCollisionTwoItems(widget.$item(), item)) {
         return widget;
       }
@@ -461,8 +463,7 @@ export class Gridster implements OnInit, OnDestroy {
 
   findItemsWithItem(item: GridsterItemConfig): GridsterItem[] {
     const a: GridsterItem[] = [];
-    for (let i = 0; i < this.grid.length; i++) {
-      const widget = this.grid[i];
+    for (const widget of getCollisionIndex(this).candidates(item)) {
       if (widget.$item() !== item && this.checkCollisionTwoItems(widget.$item(), item)) {
         a.push(widget);
       }
@@ -596,8 +597,7 @@ export class Gridster implements OnInit, OnDestroy {
 
   // identical to findItemWithItem() except that this function calls checkCollisionTwoItemsForSwaping() instead of checkCollisionTwoItems()
   findItemWithItemForSwapping(item: GridsterItemConfig): GridsterItem | boolean {
-    for (let i = this.grid.length - 1; i > -1; i--) {
-      const widget = this.grid[i];
+    for (const widget of getCollisionIndex(this).candidates(item).reverse()) {
       if (widget.$item() !== item && Gridster.checkCollisionTwoItemsForSwaping(widget.$item(), item)) {
         return widget;
       }
