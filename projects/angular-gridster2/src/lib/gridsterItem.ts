@@ -119,7 +119,10 @@ export class GridsterItem implements OnInit, OnDestroy {
   }
 
   setSize(): void {
-    this.renderer.setStyle(this.el, 'display', this.notPlaced ? '' : 'block');
+    const display = this.notPlaced ? '' : 'block';
+    if (this.el.style.display !== display) {
+      this.renderer.setStyle(this.el, 'display', display);
+    }
     this.gridster.gridRenderer.updateItem(this.el, this.$item(), this.renderer);
     this.updateItemSize();
   }

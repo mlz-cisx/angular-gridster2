@@ -324,7 +324,7 @@ export class Gridster implements OnInit, OnDestroy {
       this.renderer.setStyle(this.el, 'width', '');
       this.renderer.setStyle(this.el, 'height', '');
     }
-    this.updateGrid();
+    this.updateGridStyles();
 
     for (let i = this.grid.length - 1; i >= 0; i--) {
       const widget = this.grid[i];
@@ -337,6 +337,11 @@ export class Gridster implements OnInit, OnDestroy {
   }
 
   updateGrid(): void {
+    this.setGridDimensions();
+    this.updateGridStyles();
+  }
+
+  private updateGridStyles(): void {
     const $options = this.$options();
     if ($options.displayGrid === 'always' && !this.mobile) {
       this.renderer.addClass(this.el, 'display-grid');
@@ -345,7 +350,6 @@ export class Gridster implements OnInit, OnDestroy {
     } else if ($options.displayGrid === 'none' || !this.dragInProgress || this.mobile) {
       this.renderer.removeClass(this.el, 'display-grid');
     }
-    this.setGridDimensions();
     this.gridColumns.length = Gridster.getNewArrayLength(this.columns, this.curWidth, this.curColWidth);
     this.gridRows.length = Gridster.getNewArrayLength(this.rows, this.curHeight, this.curRowHeight);
     this.cdRef.markForCheck();

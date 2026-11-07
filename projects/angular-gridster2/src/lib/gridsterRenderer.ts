@@ -25,18 +25,18 @@ export class GridsterRenderer {
     if (this.gridster.mobile) {
       this.clearCellPosition(renderer, el);
       if ($options.keepFixedHeightInMobile) {
-        renderer.setStyle(el, 'height', (item.rows - 1) * $options.margin + item.rows * $options.fixedRowHeight + 'px');
+        this.setItemStyle(renderer, el, 'height', (item.rows - 1) * $options.margin + item.rows * $options.fixedRowHeight + 'px');
       } else {
-        renderer.setStyle(el, 'height', (item.rows * this.gridster.curWidth) / item.cols + 'px');
+        this.setItemStyle(renderer, el, 'height', (item.rows * this.gridster.curWidth) / item.cols + 'px');
       }
       if ($options.keepFixedWidthInMobile) {
-        renderer.setStyle(el, 'width', $options.fixedColWidth + 'px');
+        this.setItemStyle(renderer, el, 'width', $options.fixedColWidth + 'px');
       } else {
-        renderer.setStyle(el, 'width', '');
+        this.setItemStyle(renderer, el, 'width', '');
       }
 
-      renderer.setStyle(el, 'margin-bottom', $options.margin + 'px');
-      renderer.setStyle(el, DirTypes.LTR ? 'margin-right' : 'margin-left', '');
+      this.setItemStyle(renderer, el, 'margin-bottom', $options.margin + 'px');
+      this.setItemStyle(renderer, el, DirTypes.LTR ? 'margin-right' : 'margin-left', '');
     } else {
       const x = Math.round(this.gridster.curColWidth * item.x);
       const y = Math.round(this.gridster.curRowHeight * item.y);
@@ -44,8 +44,8 @@ export class GridsterRenderer {
       const height = this.gridster.curRowHeight * item.rows - $options.margin;
       // set the cell style
       this.setCellPosition(renderer, el, x, y);
-      renderer.setStyle(el, 'width', width + 'px');
-      renderer.setStyle(el, 'height', height + 'px');
+      this.setItemStyle(renderer, el, 'width', width + 'px');
+      this.setItemStyle(renderer, el, 'height', height + 'px');
       let marginBottom: string | null = null;
       let marginRight: string | null = null;
       if ($options.outerMargin) {
@@ -65,8 +65,8 @@ export class GridsterRenderer {
         }
       }
 
-      renderer.setStyle(el, 'margin-bottom', marginBottom);
-      renderer.setStyle(el, $options.dirType === DirTypes.LTR ? 'margin-right' : 'margin-left', marginRight);
+      this.setItemStyle(renderer, el, 'margin-bottom', marginBottom);
+      this.setItemStyle(renderer, el, $options.dirType === DirTypes.LTR ? 'margin-right' : 'margin-left', marginRight);
     }
   }
 
@@ -228,10 +228,10 @@ export class GridsterRenderer {
 
   clearCellPosition(renderer: Renderer2, el: Element): void {
     if (this.gridster.$options().useTransformPositioning) {
-      renderer.setStyle(el, 'transform', '');
+      this.setItemStyle(renderer, el, 'transform', '');
     } else {
-      renderer.setStyle(el, 'top', '');
-      renderer.setStyle(el, 'left', '');
+      this.setItemStyle(renderer, el, 'top', '');
+      this.setItemStyle(renderer, el, 'left', '');
     }
   }
 
@@ -240,10 +240,17 @@ export class GridsterRenderer {
     const xPosition = $options.dirType === DirTypes.RTL ? -x : x;
     if ($options.useTransformPositioning) {
       const transform = 'translate3d(' + xPosition + 'px, ' + y + 'px, 0)';
-      renderer.setStyle(el, 'transform', transform);
+      this.setItemStyle(renderer, el, 'transform', transform);
     } else {
-      renderer.setStyle(el, 'left', this.getLeftMargin() + xPosition + 'px');
-      renderer.setStyle(el, 'top', this.getTopMargin() + y + 'px');
+      this.setItemStyle(renderer, el, 'left', this.getLeftMargin() + xPosition + 'px');
+      this.setItemStyle(renderer, el, 'top', this.getTopMargin() + y + 'px');
+    }
+  }
+
+  private setItemStyle(renderer: Renderer2, el: Element, property: string, value: string | null): void {
+    // Read inline styles, not computed layout. Drag/resize may have written them directly.
+    if ((el as HTMLElement).style.getPropertyValue(property) !== (value ?? '')) {
+      renderer.setStyle(el, property, value);
     }
   }
 
