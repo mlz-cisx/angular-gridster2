@@ -1,6 +1,7 @@
 import { CompactType, DirTypes, DisplayGrid, GridsterConfig, GridType } from './gridsterConfig';
 
 export const GridsterConfigService: GridsterConfig = {
+  deferContentMargin: '1000px 0px',
   gridType: GridType.Fit, // 'fit' will fit the items in the container without scroll;
   scale: 1, // scale param to zoom in/zoom out
   // 'scrollVertical' will fit on width and height of the items will be the same as the width

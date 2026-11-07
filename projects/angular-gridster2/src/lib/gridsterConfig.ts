@@ -69,6 +69,8 @@ export type GridsterApi = {
 };
 
 export type GridsterConfig = {
+  /** IntersectionObserver root margin for deferred content. Defaults to 1000px 0px. */
+  deferContentMargin?: string;
   gridType?: gridTypes;
   scale?: number;
   fixedColWidth?: number;

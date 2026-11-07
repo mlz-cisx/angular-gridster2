@@ -11,3 +11,5 @@ export type { GridsterItemConfig, ResizableHandles } from './lib/gridsterItemCon
 export { GridsterPush } from './lib/gridsterPush';
 export { GridsterPushResize } from './lib/gridsterPushResize';
 export { GridsterSwap } from './lib/gridsterSwap';
+
+export { GridsterDeferContent } from './lib/gridsterDeferContent';

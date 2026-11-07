@@ -18,6 +18,7 @@ import {
 import { debounceTime, Subject, switchMap, takeUntil, timer } from 'rxjs';
 
 import { getCollisionIndex } from './gridsterCollisionIndex';
+import { GridsterContentObserver } from './gridsterContentObserver';
 import { GridsterCompact } from './gridsterCompact';
 import type { GridsterApi, GridsterConfig, GridsterConfigStrict } from './gridsterConfig';
 import { GridType } from './gridsterConfig';
@@ -37,6 +38,7 @@ import { GridsterUtils } from './gridsterUtils';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   imports: [NgStyle, GridsterPreview],
+  providers: [GridsterContentObserver],
   host: {
     '(pointerover)':
       '$options().resizable.handlesOnlyOnActiveItem && $event.pointerType !== "touch" ? resizeHandles.activate("hovered", $event.target) : null',
@@ -49,6 +51,7 @@ import { GridsterUtils } from './gridsterUtils';
 })
 export class Gridster implements OnInit, OnDestroy {
   protected readonly resizeHandles = new GridsterResizeHandles();
+  private readonly contentObserver = inject(GridsterContentObserver);
   readonly renderer = inject(Renderer2);
   readonly cdRef = inject(ChangeDetectorRef);
   readonly zone = inject(NgZone);
@@ -107,6 +110,7 @@ export class Gridster implements OnInit, OnDestroy {
       this.rows = $options.minRows + $options.addEmptyRowsCount;
       this.setGridSize();
       this.calculateLayout();
+      this.contentObserver.configure(this.el, $options.deferContentMargin);
     });
   }
 
@@ -199,6 +203,7 @@ export class Gridster implements OnInit, OnDestroy {
       }
       this.setGridSize();
       this.calculateLayout();
+      this.contentObserver.configure(this.el, this.$options().deferContentMargin);
     }
   };
 
