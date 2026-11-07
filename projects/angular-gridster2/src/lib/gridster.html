@@ -1,9 +1,5 @@
-@for (_ of gridColumns; track i; let i = $index) {
-  <div class="gridster-column" [ngStyle]="gridRenderer.getGridColumnStyle(i)"></div>
-}
-@for (_ of gridRows; track i; let i = $index) {
-  <div class="gridster-row" [ngStyle]="gridRenderer.getGridRowStyle(i)"></div>
-}
+<div class="gridster-column" aria-hidden="true" [ngStyle]="gridRenderer.getGridBackgroundStyle(false)"></div>
+<div class="gridster-row" aria-hidden="true" [ngStyle]="gridRenderer.getGridBackgroundStyle(true)"></div>
 <ng-content />
 
 <gridster-preview class="gridster-preview" />

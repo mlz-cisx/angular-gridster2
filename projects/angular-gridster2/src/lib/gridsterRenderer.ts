@@ -126,6 +126,28 @@ export class GridsterRenderer {
     this.gridster.renderer.removeClass(this.gridster.el, removeClass3);
   }
 
+  /** Two repeated paint layers replace one DOM element per logical row/column. */
+  getGridBackgroundStyle(horizontal: boolean): Record<string, string> {
+    const grid = this.gridster;
+    const options = grid.$options();
+    const pitch = horizontal ? grid.curRowHeight : grid.curColWidth;
+    const count = horizontal ? grid.gridRows.length : grid.gridColumns.length;
+    const cell = Math.max(0, pitch - options.margin);
+    if (!Number.isFinite(pitch) || pitch <= 0 || count === 0 || cell <= 0) {
+      return { display: 'none' };
+    }
+    const rtlOffset = options.dirType === DirTypes.RTL ? -(grid.gridColumns.length - 1) * grid.curColWidth : 0;
+    const width = horizontal ? grid.gridColumns.length * grid.curColWidth + options.margin : (count - 1) * pitch + cell;
+    const height = horizontal ? (count - 1) * pitch + cell : grid.gridRows.length * grid.curRowHeight - options.margin;
+    return {
+      left: this.getLeftMargin() + (horizontal ? 0 : rtlOffset) + 'px',
+      top: this.getTopMargin() + 'px',
+      width: Math.max(0, width) + 'px',
+      height: Math.max(0, height) + 'px',
+      'background-image': `repeating-linear-gradient(to ${horizontal ? 'bottom' : 'right'}, var(--gridster-grid-line-color, white) 0px, var(--gridster-grid-line-color, white) 1px, transparent 1px, transparent ${Math.max(1, cell - 1)}px, var(--gridster-grid-line-color, white) ${Math.max(1, cell - 1)}px, var(--gridster-grid-line-color, white) ${cell}px, transparent ${cell}px, transparent ${pitch}px)`
+    };
+  }
+
   getGridColumnStyle(i: number): CommonGridStyle {
     const margin = this.gridster.$options().margin;
     // generates the new style

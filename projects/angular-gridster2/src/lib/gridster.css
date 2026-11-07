@@ -46,23 +46,15 @@ gridster.gridSize.fit {
   width: 100%;
 }
 
-gridster .gridster-column, gridster .gridster-row {
+gridster .gridster-column,
+gridster .gridster-row {
   position: absolute;
   display: none;
-  transition: transform .3s;
+  pointer-events: none;
   box-sizing: border-box;
 }
 
-gridster.display-grid .gridster-column, gridster.display-grid .gridster-row {
+gridster.display-grid .gridster-column,
+gridster.display-grid .gridster-row {
   display: block;
-}
-
-gridster .gridster-column {
-  border-left: 1px solid white;
-  border-right: 1px solid white;
-}
-
-gridster .gridster-row {
-  border-top: 1px solid white;
-  border-bottom: 1px solid white;
 }
