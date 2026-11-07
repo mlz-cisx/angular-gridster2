@@ -27,6 +27,7 @@ import { GridsterItem } from './gridsterItem';
 import { GridsterItemConfig } from './gridsterItemConfig';
 import { GridsterPreview } from './gridsterPreview';
 import { GridsterRenderer } from './gridsterRenderer';
+import { GridsterResizeHandles } from './gridsterResizeHandles';
 import { GridsterUtils } from './gridsterUtils';
 
 @Component({
@@ -35,9 +36,19 @@ import { GridsterUtils } from './gridsterUtils';
   styleUrl: './gridster.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgStyle, GridsterPreview]
+  imports: [NgStyle, GridsterPreview],
+  host: {
+    '(pointerover)':
+      '$options().resizable.handlesOnlyOnActiveItem && $event.pointerType !== "touch" ? resizeHandles.activate("hovered", $event.target) : null',
+    '(pointerleave)': '$options().resizable.handlesOnlyOnActiveItem ? resizeHandles.activate("hovered", null) : null',
+    '(pointerdown)':
+      '$options().resizable.handlesOnlyOnActiveItem && $event.pointerType === "touch" ? resizeHandles.activate("touched", $event.target) : null',
+    '(focusin)': '$options().resizable.handlesOnlyOnActiveItem ? resizeHandles.activate("focused", $event.target) : null',
+    '(focusout)': '$options().resizable.handlesOnlyOnActiveItem ? resizeHandles.activate("focused", $event.relatedTarget) : null'
+  }
 })
 export class Gridster implements OnInit, OnDestroy {
+  protected readonly resizeHandles = new GridsterResizeHandles();
   readonly renderer = inject(Renderer2);
   readonly cdRef = inject(ChangeDetectorRef);
   readonly zone = inject(NgZone);
@@ -386,12 +397,14 @@ export class Gridster implements OnInit, OnDestroy {
         itemComponent.notPlaced = true;
       }
     }
+    this.resizeHandles.add(itemComponent);
     this.grid.push(itemComponent);
     getCollisionIndex(this).add(itemComponent);
     this.calculateLayout$.next();
   }
 
   removeItem(itemComponent: GridsterItem): void {
+    this.resizeHandles.remove(itemComponent);
     getCollisionIndex(this).remove(itemComponent);
     this.grid.splice(this.grid.indexOf(itemComponent), 1);
     this.calculateLayout$.next();

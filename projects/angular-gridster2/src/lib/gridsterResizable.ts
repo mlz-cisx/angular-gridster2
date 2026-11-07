@@ -30,6 +30,8 @@ export class GridsterResizable {
    */
   private directionFunction: ((event: Pick<MouseEvent, 'clientX' | 'clientY'>) => void) | null = null;
 
+  handlesActive = signal(false);
+  resizing = signal(false);
   resizeEnabled = signal<boolean>(false);
   resizableHandles = signal<ResizableHandles>({
     s: false,
@@ -106,6 +108,7 @@ export class GridsterResizable {
     this.touchend = this.gridsterItem.renderer.listen('document', 'touchend', this.dragStop);
     this.touchcancel = this.gridsterItem.renderer.listen('document', 'touchcancel', this.dragStop);
 
+    this.resizing.set(true);
     this.gridsterItem.renderer.addClass(this.gridsterItem.el, 'gridster-item-resizing');
     this.lastMouse.clientX = e.clientX;
     this.lastMouse.clientY = e.clientY;
@@ -242,6 +245,7 @@ export class GridsterResizable {
     this.touchmove();
     this.touchend();
     this.touchcancel();
+    this.resizing.set(false);
     this.gridster.dragInProgress = false;
     this.resizeEventScrollType = {
       west: false,

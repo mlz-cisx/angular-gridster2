@@ -166,6 +166,8 @@ export type Draggable = DragBase & {
 };
 
 export type Resizable = DragBase & {
+  /** Mount handles only on hovered, focused, touch-selected or resizing items. Defaults to false. */
+  handlesOnlyOnActiveItem?: boolean;
   handles?: ResizableHandles;
 };
 

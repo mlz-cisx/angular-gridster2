@@ -84,6 +84,7 @@ export const GridsterConfigService: GridsterConfig = {
     // Arguments: source, target, gridComponent
   },
   resizable: {
+    handlesOnlyOnActiveItem: false,
     delayStart: 0, // milliseconds to delay the start of resize, useful for touch interaction
     enabled: false, // enable/disable resizable items
     handles: {

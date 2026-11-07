@@ -1,57 +1,59 @@
 <ng-content />
-@if (resize.resizableHandles().s && resize.resizeEnabled()) {
-  <div
-    (mousedown)="resize.dragStartDelay($event)"
-    (touchstart)="resize.dragStartDelay($event)"
-    class="gridster-item-resizable-handler handle-s"
-  ></div>
-}
-@if (resize.resizableHandles().e && resize.resizeEnabled()) {
-  <div
-    (mousedown)="resize.dragStartDelay($event)"
-    (touchstart)="resize.dragStartDelay($event)"
-    class="gridster-item-resizable-handler handle-e"
-  ></div>
-}
-@if (resize.resizableHandles().n && resize.resizeEnabled()) {
-  <div
-    (mousedown)="resize.dragStartDelay($event)"
-    (touchstart)="resize.dragStartDelay($event)"
-    class="gridster-item-resizable-handler handle-n"
-  ></div>
-}
-@if (resize.resizableHandles().w && resize.resizeEnabled()) {
-  <div
-    (mousedown)="resize.dragStartDelay($event)"
-    (touchstart)="resize.dragStartDelay($event)"
-    class="gridster-item-resizable-handler handle-w"
-  ></div>
-}
-@if (resize.resizableHandles().se && resize.resizeEnabled()) {
-  <div
-    (mousedown)="resize.dragStartDelay($event)"
-    (touchstart)="resize.dragStartDelay($event)"
-    class="gridster-item-resizable-handler handle-se"
-  ></div>
-}
-@if (resize.resizableHandles().ne && resize.resizeEnabled()) {
-  <div
-    (mousedown)="resize.dragStartDelay($event)"
-    (touchstart)="resize.dragStartDelay($event)"
-    class="gridster-item-resizable-handler handle-ne"
-  ></div>
-}
-@if (resize.resizableHandles().sw && resize.resizeEnabled()) {
-  <div
-    (mousedown)="resize.dragStartDelay($event)"
-    (touchstart)="resize.dragStartDelay($event)"
-    class="gridster-item-resizable-handler handle-sw"
-  ></div>
-}
-@if (resize.resizableHandles().nw && resize.resizeEnabled()) {
-  <div
-    (mousedown)="resize.dragStartDelay($event)"
-    (touchstart)="resize.dragStartDelay($event)"
-    class="gridster-item-resizable-handler handle-nw"
-  ></div>
+@if (resize.resizeEnabled() && (!gridster.$options().resizable.handlesOnlyOnActiveItem || resize.handlesActive() || resize.resizing())) {
+  @if (resize.resizableHandles().s) {
+    <div
+      (mousedown)="resize.dragStartDelay($event)"
+      (touchstart)="resize.dragStartDelay($event)"
+      class="gridster-item-resizable-handler handle-s"
+    ></div>
+  }
+  @if (resize.resizableHandles().e) {
+    <div
+      (mousedown)="resize.dragStartDelay($event)"
+      (touchstart)="resize.dragStartDelay($event)"
+      class="gridster-item-resizable-handler handle-e"
+    ></div>
+  }
+  @if (resize.resizableHandles().n) {
+    <div
+      (mousedown)="resize.dragStartDelay($event)"
+      (touchstart)="resize.dragStartDelay($event)"
+      class="gridster-item-resizable-handler handle-n"
+    ></div>
+  }
+  @if (resize.resizableHandles().w) {
+    <div
+      (mousedown)="resize.dragStartDelay($event)"
+      (touchstart)="resize.dragStartDelay($event)"
+      class="gridster-item-resizable-handler handle-w"
+    ></div>
+  }
+  @if (resize.resizableHandles().se) {
+    <div
+      (mousedown)="resize.dragStartDelay($event)"
+      (touchstart)="resize.dragStartDelay($event)"
+      class="gridster-item-resizable-handler handle-se"
+    ></div>
+  }
+  @if (resize.resizableHandles().ne) {
+    <div
+      (mousedown)="resize.dragStartDelay($event)"
+      (touchstart)="resize.dragStartDelay($event)"
+      class="gridster-item-resizable-handler handle-ne"
+    ></div>
+  }
+  @if (resize.resizableHandles().sw) {
+    <div
+      (mousedown)="resize.dragStartDelay($event)"
+      (touchstart)="resize.dragStartDelay($event)"
+      class="gridster-item-resizable-handler handle-sw"
+    ></div>
+  }
+  @if (resize.resizableHandles().nw) {
+    <div
+      (mousedown)="resize.dragStartDelay($event)"
+      (touchstart)="resize.dragStartDelay($event)"
+      class="gridster-item-resizable-handler handle-nw"
+    ></div>
+  }
 }
