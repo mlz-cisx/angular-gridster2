@@ -12,6 +12,7 @@ import {
   OnDestroy,
   OnInit,
   Renderer2,
+  untracked,
   viewChild,
   ViewEncapsulation
 } from '@angular/core';
@@ -93,24 +94,34 @@ export class Gridster implements OnInit, OnDestroy {
 
   calculateLayout$ = new Subject<void>();
 
+  private readonly dirtyItems = new Set<GridsterItem>();
+  private readonly registeredItems = new Map<GridsterItem, number>();
+  private nextItemOrder = 0;
+  private readonly layoutChanges$ = new Subject<void>();
+  private fullLayoutRequired = true;
+  private lastGeometry: (number | boolean)[] = [];
+
   private resize$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
   constructor() {
     effect(() => {
       const $options = this.$options();
-      if (!$options.disableWindowResize && !this.windowResize) {
-        this.windowResize = this.renderer.listen('window', 'resize', this.onResize);
-      } else if ($options.disableWindowResize && this.windowResize) {
-        this.windowResize();
-        this.windowResize = null;
-      }
-      this.emptyCell.updateOptions();
-      this.columns = $options.minCols;
-      this.rows = $options.minRows + $options.addEmptyRowsCount;
-      this.setGridSize();
-      this.calculateLayout();
-      this.contentObserver.configure(this.el, $options.deferContentMargin);
+      // Individual item inputs must not retrigger this full options refresh.
+      untracked(() => {
+        if (!$options.disableWindowResize && !this.windowResize) {
+          this.windowResize = this.renderer.listen('window', 'resize', this.onResize);
+        } else if ($options.disableWindowResize && this.windowResize) {
+          this.windowResize();
+          this.windowResize = null;
+        }
+        this.emptyCell.updateOptions();
+        this.columns = $options.minCols;
+        this.rows = $options.minRows + $options.addEmptyRowsCount;
+        this.setGridSize();
+        this.calculateLayout();
+        this.contentObserver.configure(this.el, $options.deferContentMargin);
+      });
     });
   }
 
@@ -151,7 +162,12 @@ export class Gridster implements OnInit, OnDestroy {
       options.initCallback(this, this.api);
     }
 
-    this.calculateLayout$.pipe(debounceTime(0), takeUntil(this.destroy$)).subscribe(() => this.calculateLayout());
+    // Preserve full-refresh semantics for callers of the existing public subject.
+    this.calculateLayout$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.fullLayoutRequired = true;
+      this.layoutChanges$.next();
+    });
+    this.layoutChanges$.pipe(debounceTime(0), takeUntil(this.destroy$)).subscribe(() => this.calculateLayout(false));
 
     this.resize$
       .pipe(
@@ -174,12 +190,14 @@ export class Gridster implements OnInit, OnDestroy {
       height = this.el.clientHeight;
     }
     if ((width !== this.curWidth || height !== this.curHeight) && this.checkIfToResize()) {
-      this.onResize();
+      this.resizeGrid(false);
     }
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
+    this.dirtyItems.clear();
+    this.registeredItems.clear();
     if (this.windowResize) {
       this.windowResize();
     }
@@ -193,7 +211,9 @@ export class Gridster implements OnInit, OnDestroy {
     this.compact = null!;
   }
 
-  onResize = (): void => {
+  onResize = (): void => this.resizeGrid(true);
+
+  private resizeGrid(fullRefresh: boolean): void {
     if (this.el.clientWidth) {
       const $options = this.$options();
       if ($options.setGridSize) {
@@ -202,10 +222,10 @@ export class Gridster implements OnInit, OnDestroy {
         this.renderer.setStyle(this.el, 'height', '');
       }
       this.setGridSize();
-      this.calculateLayout();
+      this.calculateLayout(fullRefresh);
       this.contentObserver.configure(this.el, this.$options().deferContentMargin);
     }
-  };
+  }
 
   checkIfToResize(): boolean {
     const clientWidth = this.el.clientWidth;
@@ -260,7 +280,6 @@ export class Gridster implements OnInit, OnDestroy {
     const $options = this.$options();
     let rows = $options.minRows;
     let columns = $options.minCols;
-
     for (let i = this.grid.length - 1; i >= 0; i--) {
       const widget = this.grid[i];
       if (!widget.notPlaced) {
@@ -271,6 +290,20 @@ export class Gridster implements OnInit, OnDestroy {
     }
     rows += $options.addEmptyRowsCount;
     if (this.columns !== columns || this.rows !== rows) {
+      // Only extent changes can alter margins on otherwise unchanged edge items.
+      for (let i = this.grid.length - 1; i >= 0; i--) {
+        const widget = this.grid[i];
+        if (widget.notPlaced) continue;
+        const item = widget.$item();
+        const bottom = item.y + item.rows;
+        const right = item.x + item.cols;
+        if (
+          (this.rows !== rows && (bottom === this.rows || bottom === rows)) ||
+          (this.columns !== columns && (right === this.columns || right === columns))
+        ) {
+          this.markItemDirty(widget, false);
+        }
+      }
       this.columns = columns;
       this.rows = rows;
       const options = this.options();
@@ -280,7 +313,8 @@ export class Gridster implements OnInit, OnDestroy {
     }
   }
 
-  private calculateLayout(): void {
+  private calculateLayout(fullRefresh = true): void {
+    if (fullRefresh) this.fullLayoutRequired = true;
     if (this.compact) {
       this.compact.checkCompact();
     }
@@ -343,14 +377,42 @@ export class Gridster implements OnInit, OnDestroy {
     }
     this.updateGridStyles();
 
-    for (let i = this.grid.length - 1; i >= 0; i--) {
-      const widget = this.grid[i];
+    const geometry = [this.curColWidth, this.curRowHeight, this.mobile, this.mobile ? this.curWidth : 0];
+    const full = this.fullLayoutRequired || geometry.some((value, index) => value !== this.lastGeometry[index]);
+    const items =
+      full || this.dirtyItems.size === this.grid.length
+        ? Array.from(this.grid).reverse()
+        : [...this.dirtyItems].sort((a, b) => this.registeredItems.get(b)! - this.registeredItems.get(a)!);
+    // Callbacks may dirty more items; leave those queued for the next pass.
+    this.dirtyItems.clear();
+    this.fullLayoutRequired = false;
+    this.lastGeometry = geometry;
+    for (const widget of items) {
+      if (!this.registeredItems.has(widget)) continue;
+      if (!full && this.dragInProgress && widget.$item() === this.movingItem) {
+        // Interaction code owns the moving item's live pixel position/size.
+        this.dirtyItems.add(widget);
+        continue;
+      }
       widget.setSize();
       widget.drag.toggle();
       widget.resize.toggle();
     }
+    for (const widget of this.dirtyItems) {
+      if (!this.dragInProgress || widget.$item() !== this.movingItem) {
+        this.layoutChanges$.next();
+        break;
+      }
+    }
 
     this.resize$.next();
+  }
+
+  /** @internal Pointer updates pass false to preserve their live pixel rendering. */
+  markItemDirty(widget: GridsterItem, schedule = true): void {
+    if (!this.registeredItems.has(widget)) return;
+    this.dirtyItems.add(widget);
+    if (schedule) this.layoutChanges$.next();
   }
 
   updateGrid(): void {
@@ -405,14 +467,17 @@ export class Gridster implements OnInit, OnDestroy {
     this.resizeHandles.add(itemComponent);
     this.grid.push(itemComponent);
     getCollisionIndex(this).add(itemComponent);
-    this.calculateLayout$.next();
+    this.registeredItems.set(itemComponent, this.nextItemOrder++);
+    this.markItemDirty(itemComponent);
   }
 
   removeItem(itemComponent: GridsterItem): void {
+    this.registeredItems.delete(itemComponent);
+    this.dirtyItems.delete(itemComponent);
     this.resizeHandles.remove(itemComponent);
     getCollisionIndex(this).remove(itemComponent);
     this.grid.splice(this.grid.indexOf(itemComponent), 1);
-    this.calculateLayout$.next();
+    this.layoutChanges$.next();
 
     const options = this.options();
     if (options.itemRemovedCallback) {

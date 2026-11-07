@@ -39,6 +39,7 @@ export class GridsterItem implements OnInit, OnDestroy {
     transform: item => {
       // Collision queries may run before the computed rectangle/effect refreshes.
       getCollisionIndex(this.gridster).update(this, item);
+      this.gridster.markItemDirty(this, false);
       return item;
     }
   });
@@ -89,7 +90,7 @@ export class GridsterItem implements OnInit, OnDestroy {
         nw: undefined
       }
     });
-    return getCollisionIndex(this.gridster).track(this, item);
+    return getCollisionIndex(this.gridster).track(this, item, () => this.gridster.markItemDirty(this, false));
   });
   top: number;
   left: number;
@@ -107,11 +108,7 @@ export class GridsterItem implements OnInit, OnDestroy {
   constructor() {
     effect(() => {
       this.$item();
-      if (this.init) {
-        untracked(() => this.setSize());
-      } else {
-        this.gridster.calculateLayout$.next();
-      }
+      untracked(() => this.gridster.markItemDirty(this));
     });
   }
 
@@ -201,7 +198,7 @@ export class GridsterItem implements OnInit, OnDestroy {
       item.rows = $item.rows;
       item.x = $item.x;
       item.y = $item.y;
-      this.gridster.calculateLayout$.next();
+      this.gridster.markItemDirty(this);
       this.itemChanged();
     }
   }

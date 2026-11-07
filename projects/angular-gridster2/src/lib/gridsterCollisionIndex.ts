@@ -13,19 +13,22 @@ class GridsterCollisionIndex {
   private readonly rectangles = new WeakMap<GridsterItem, GridsterItemConfig>();
   private nextOrder = 0;
 
-  track(widget: GridsterItem, item: GridsterItemConfig): GridsterItemConfig {
+  track(widget: GridsterItem, item: GridsterItemConfig, changed?: () => void): GridsterItemConfig {
     this.update(widget, item);
     // Internal rectangles are mutated directly by drag, push, swap and rollback.
-    // Observe vertical changes here so indexing never depends on DOM rendering.
-    for (const property of ['y', 'rows'] as const) {
+    // Index vertical changes immediately and notify layout of all geometry changes.
+    for (const property of ['x', 'y', 'cols', 'rows'] as const) {
       let value = item[property];
       Object.defineProperty(item, property, {
         enumerable: true,
         configurable: true,
         get: () => value,
         set: next => {
+          if (next === value) return;
           value = next;
-          if (this.rectangles.get(widget) === item) this.update(widget, item);
+          if (this.rectangles.get(widget) !== item) return;
+          if (property === 'y' || property === 'rows') this.update(widget, item);
+          changed?.();
         }
       });
     }
