@@ -98,7 +98,15 @@ export class GridsterItem implements OnInit, OnDestroy {
   height: number;
   drag: GridsterDraggable = new GridsterDraggable(this, this.gridster, this.zone, this.cdRef);
   resize: GridsterResizable = new GridsterResizable(this, this.gridster, this.zone);
-  notPlaced: boolean;
+  private _notPlaced: boolean;
+  get notPlaced(): boolean {
+    return this._notPlaced;
+  }
+  set notPlaced(value: boolean) {
+    if (this._notPlaced === value) return;
+    this._notPlaced = value;
+    this.gridster.markItemDirty(this);
+  }
   init: boolean;
 
   zIndex(): number {

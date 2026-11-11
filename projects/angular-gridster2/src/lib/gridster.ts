@@ -95,6 +95,11 @@ export class Gridster implements OnInit, OnDestroy {
   calculateLayout$ = new Subject<void>();
 
   private readonly dirtyItems = new Set<GridsterItem>();
+  private readonly extentChanges = new Set<GridsterItem>();
+  private readonly itemExtents = new Map<GridsterItem, { bottom: number; right: number }>();
+  private bottom = 0;
+  private right = 0;
+  private rebuildExtents = true;
   private readonly registeredItems = new Map<GridsterItem, number>();
   private nextItemOrder = 0;
   private readonly layoutChanges$ = new Subject<void>();
@@ -197,6 +202,8 @@ export class Gridster implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.dirtyItems.clear();
+    this.extentChanges.clear();
+    this.itemExtents.clear();
     this.registeredItems.clear();
     if (this.windowResize) {
       this.windowResize();
@@ -278,17 +285,9 @@ export class Gridster implements OnInit, OnDestroy {
       this.renderer.removeClass(this.el, 'mobile');
     }
     const $options = this.$options();
-    let rows = $options.minRows;
-    let columns = $options.minCols;
-    for (let i = this.grid.length - 1; i >= 0; i--) {
-      const widget = this.grid[i];
-      if (!widget.notPlaced) {
-        const $item = widget.$item();
-        rows = Math.max(rows, $item.y + $item.rows);
-        columns = Math.max(columns, $item.x + $item.cols);
-      }
-    }
-    rows += $options.addEmptyRowsCount;
+    this.updateExtents();
+    const rows = Math.max($options.minRows, this.bottom) + $options.addEmptyRowsCount;
+    const columns = Math.max($options.minCols, this.right);
     if (this.columns !== columns || this.rows !== rows) {
       // Only extent changes can alter margins on otherwise unchanged edge items.
       for (let i = this.grid.length - 1; i >= 0; i--) {
@@ -313,8 +312,35 @@ export class Gridster implements OnInit, OnDestroy {
     }
   }
 
+  private updateExtents(): void {
+    // Only shrinking a cached outer edge requires finding a new maximum.
+    for (const widget of this.extentChanges) {
+      const previous = this.itemExtents.get(widget);
+      const item = widget.$item();
+      const bottom = widget.notPlaced ? 0 : item.y + item.rows;
+      const right = widget.notPlaced ? 0 : item.x + item.cols;
+      if (previous && ((previous.bottom === this.bottom && bottom < this.bottom) || (previous.right === this.right && right < this.right))) {
+        this.rebuildExtents = true;
+      }
+      this.itemExtents.set(widget, { bottom, right });
+    }
+    const items = this.rebuildExtents ? Array.from(this.grid) : this.extentChanges;
+    if (this.rebuildExtents) this.bottom = this.right = 0;
+    for (const widget of items) {
+      const item = widget.$item();
+      const bottom = widget.notPlaced ? 0 : item.y + item.rows;
+      const right = widget.notPlaced ? 0 : item.x + item.cols;
+      this.itemExtents.set(widget, { bottom, right });
+      this.bottom = Math.max(this.bottom, bottom);
+      this.right = Math.max(this.right, right);
+    }
+    this.extentChanges.clear();
+    this.rebuildExtents = false;
+  }
+
   private calculateLayout(fullRefresh = true): void {
     if (fullRefresh) this.fullLayoutRequired = true;
+    if (this.fullLayoutRequired) this.rebuildExtents = true;
     if (this.compact) {
       this.compact.checkCompact();
     }
@@ -412,6 +438,7 @@ export class Gridster implements OnInit, OnDestroy {
   markItemDirty(widget: GridsterItem, schedule = true): void {
     if (!this.registeredItems.has(widget)) return;
     this.dirtyItems.add(widget);
+    this.extentChanges.add(widget);
     if (schedule) this.layoutChanges$.next();
   }
 
@@ -472,6 +499,10 @@ export class Gridster implements OnInit, OnDestroy {
   }
 
   removeItem(itemComponent: GridsterItem): void {
+    const extent = this.itemExtents.get(itemComponent);
+    if (extent && (extent.bottom === this.bottom || extent.right === this.right)) this.rebuildExtents = true;
+    this.itemExtents.delete(itemComponent);
+    this.extentChanges.delete(itemComponent);
     this.registeredItems.delete(itemComponent);
     this.dirtyItems.delete(itemComponent);
     this.resizeHandles.remove(itemComponent);
