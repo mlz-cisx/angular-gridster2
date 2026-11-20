@@ -83,6 +83,31 @@ Set `resizable.handlesOnlyOnActiveItem: true` alongside `resizable.enabled: true
 - avoids redundant layout scans and style writes ([`8c0f856`](https://github.com/wongJG/angular-gridster2/commit/8c0f8560110d790214ca9cb13dd96a8a5a0ee168))
 - renders the grid background with CSS gradients ([`356c4ac`](https://github.com/wongJG/angular-gridster2/commit/356c4ac82b5e5cc0b2b13f144c87225fc364ebbe))
 
+## Benchmarks
+
+After installing dependencies, run the browser benchmarks:
+
+```sh
+npx playwright install chromium
+npm run benchmark
+```
+
+Initial render times (lower is better) and DOM element counts inside the grid, measured on the same machine with Chromium 159, production builds:
+
+|  Items | `original` |     `perf` | `original` DOM nodes | `perf` DOM nodes |
+| -----: | ---------: | ---------: | -------------------: | ---------------: |
+|    500 |   194.4 ms |   127.3 ms |                4,555 |              503 |
+|  2,000 |   606.9 ms |   370.7 ms |               18,180 |            2,003 |
+| 10,000 | 8,056.0 ms | 1,323.4 ms |               90,847 |           10,003 |
+
+Content rendering and scrolling with 2,000 widgets:
+
+| Metric                      |     `original` | `perf` (eager) | `perf` (defer enable) |
+| :-------------------------- | -------------: | -------------: | --------------------: |
+| Initial render              |     1,257.1 ms |     1,003.1 ms |              265.0 ms |
+| Initially mounted widgets   |          2,000 |          2,000 |                   192 |
+| Scroll down frame p95 / max | 33.3 / 50.0 ms | 16.8 / 33.3 ms |        33.3 / 66.7 ms |
+
 ## License
 
 MIT; see [LICENSE](LICENSE).
