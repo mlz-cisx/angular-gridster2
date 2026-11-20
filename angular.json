@@ -135,6 +135,42 @@
           }
         }
       }
+    },
+    "gridster-benchmark": {
+      "projectType": "application",
+      "root": "benchmarks/app",
+      "sourceRoot": "benchmarks/app",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/benchmark",
+            "index": "benchmarks/app/index.html",
+            "browser": "benchmarks/app/main.ts",
+            "tsConfig": "benchmarks/app/tsconfig.json",
+            "styles": [
+              "benchmarks/app/styles.css"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "outputHashing": "all"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "gridster-benchmark:build:production"
+            }
+          },
+          "defaultConfiguration": "production"
+        }
+      }
     }
   }
 }
