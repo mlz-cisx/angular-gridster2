@@ -1,15 +1,24 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { Gridster, GridsterConfig, GridsterItem, GridsterItemConfig, GridType } from 'angular-gridster2';
+import { Gridster, GridsterConfig, GridsterDeferContent, GridsterItem, GridsterItemConfig, GridType } from 'angular-gridster2';
+import { BenchmarkWidget } from './widget';
 
 @Component({
   selector: 'app-benchmark',
-  imports: [Gridster, GridsterItem],
+  imports: [Gridster, GridsterItem, GridsterDeferContent, BenchmarkWidget],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <p>Initial render benchmark: {{ count }} items</p>
+    <p>Grid benchmark: {{ count }} items</p>
     <gridster [options]="options" [attr.data-benchmark-ready]="ready()">
       @for (item of items; track item.id) {
-        <gridster-item [item]="item">Widget {{ item.id }}</gridster-item>
+        <gridster-item [item]="item">
+          @if (content) {
+            <ng-template [gridsterDeferContent]="content === 'deferred'">
+              <app-benchmark-widget [id]="item.id" />
+            </ng-template>
+          } @else {
+            Widget {{ item.id }}
+          }
+        </gridster-item>
       }
     </gridster>
   `,
@@ -25,7 +34,9 @@ import { Gridster, GridsterConfig, GridsterItem, GridsterItemConfig, GridType } 
 })
 export class Benchmark {
   private readonly started = performance.now();
-  private readonly requestedCount = Number(new URLSearchParams(window.location.search).get('count') ?? 500);
+  private readonly params = new URLSearchParams(window.location.search);
+  readonly content = this.params.get('content');
+  private readonly requestedCount = Number(this.params.get('count') ?? 500);
   readonly count = Number.isInteger(this.requestedCount) && this.requestedCount > 0 && this.requestedCount <= 10000 ? this.requestedCount : 500;
   readonly ready = signal(false);
   readonly items: GridsterItemConfig[] = Array.from({ length: this.count }, (_, id) => ({
@@ -43,6 +54,7 @@ export class Benchmark {
     maxCols: 12,
     maxRows: 10000,
     mobileBreakpoint: 0,
+    deferContentMargin: '1000px 0px',
     scrollToNewItems: false,
     draggable: { enabled: true },
     resizable: { enabled: true, handlesOnlyOnActiveItem: true },
