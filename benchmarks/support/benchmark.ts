@@ -9,9 +9,14 @@ export const test = base.extend<{ benchmarkPage: Page }>({
   }
 });
 
-export async function openGrid(page: Page, options: { count: number; content?: 'eager' | 'deferred' }): Promise<void> {
+export async function openGrid(
+  page: Page,
+  options: { count: number; content?: 'eager' | 'deferred'; layout?: 'drag'; push?: boolean }
+): Promise<void> {
   const params = new URLSearchParams({ count: String(options.count) });
   if (options.content) params.set('content', options.content);
+  if (options.layout) params.set('layout', options.layout);
+  if (options.push !== undefined) params.set('push', String(options.push));
   await page.goto(`?${params}`);
   await expect(page.locator('gridster')).toHaveAttribute('data-benchmark-ready', 'true');
   await expect(page.locator('gridster-item')).toHaveCount(options.count);
