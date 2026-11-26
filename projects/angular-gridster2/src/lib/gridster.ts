@@ -401,6 +401,8 @@ export class Gridster implements OnInit, OnDestroy {
       this.renderer.setStyle(this.el, 'width', '');
       this.renderer.setStyle(this.el, 'height', '');
     }
+    // avoid setGridSize repeatedly clear and restore the host size, disturbing page scrolling.
+    if ($options.setGridSize && !this.mobile) this.setGridSize();
     this.updateGridStyles();
 
     const geometry = [this.curColWidth, this.curRowHeight, this.mobile, this.mobile ? this.curWidth : 0];
